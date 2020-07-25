@@ -4,8 +4,9 @@ Created on Sat Jul 25 18:06:20 2020
 
 @author: Cipriandan
 ------------------------------------------------------------------------------
-
-
+Black-Scholes simulation of index level at time == T
+- Exp ( standard normal )
+- Log-normal( mu, sigma )
 ------------------------------------------------------------------------------
 """
 
