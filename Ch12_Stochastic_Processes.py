@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from pylab import plt, mpl
 import scipy.stats as scs
+import statistics as st
 
 import math
 
@@ -45,31 +46,41 @@ N = 10 ** 4  # .... number of paths to be simulated .................
 M = 100       # .... number of time intervals for discretisation .....
 dt = T / M
 
-S = np.zeros( (M + 1, N ) ) 
-S[ 0 ] = S0
+S_BM = np.zeros( (M + 1, N ) ) 
+S_BM[ 0 ] = S0
 
 for t in range( 1, M + 1 ):
         expr = ( r - 0.5 * sigma **2  ) * dt + sigma * math.sqrt( dt ) * np.random.standard_normal( N )
-        S[ t ] = S[ t - 1 ] * np.exp( expr )
+        S_BM[ t ] = S_BM[ t - 1 ] * np.exp( expr )
         del expr
         
-S_T = S[ -1 ]        
+S_T = S_BM[ -1 ]        
 
-
+ 
+mu_3s = np.mean( S_T )  + 3 * np.std( S_T )
+mu_5s = np.mean( S_T )  + 5 * np.std( S_T )
 #............................................................................
 #   Histogram of final values
 #............................................................................
 plt.hist( S_T, bins = 100, edgecolor = 'darkgray', color = 'darkblue' )
 plt.axvline( S0, linestyle = 'dashed', alpha = 0.8, color = 'darkred' )
+plt.axvline( np.mean( S_T ) , linestyle = 'dashed', alpha = 0.8, color = 'red' )
+
+plt.axvline( mu_3s, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+plt.annotate( s = '$\mu + 3\sigma = $' + str( round( mu_3s ,1) ), xy=(mu_3s, 500 ) )
+
+plt.axvline( mu_5s, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+plt.annotate( s = '$\mu + 5\sigma = $' + str( round( mu_5s ,1) ), xy=(mu_5s, 500 ) )
+
 plt.xlabel('index level' )
 plt.ylabel('frequency' )
-plt.title( 'Geometric Brownian Motion: distribution of S_T' )
+plt.title( 'Geometric Brownian Motion: distribution of $S_T$' )
 
 
 #............................................................................
 #  Sample of paths
 #............................................................................
-plt.plot( S[:, :10], lw = 0.85, linestyle = '-.' )
+plt.plot( S_BM[:, :10], lw = 0.85, linestyle = '-.' )
 plt.xlabel('time')
 plt.xlabel('index level')
 
@@ -144,7 +155,7 @@ kappa = 3.0
 theta = 0.25
 sigma = 0.1
 rho = 0.6
-T = 1.0
+T = 2.0
 
 corr_mat = np.zeros( (2,2) )
 corr_mat[ 0,:] = [ 1.0, rho ]
@@ -152,8 +163,8 @@ corr_mat[ 1,:] = [ rho, 1.0 ]
 cho_mat = np.linalg.cholesky( corr_mat )
 
 
-M = 50
-N = 5 * 10 ** 4
+M = 100
+N = 10 ** 4
 dt = T / M
 
 ran_num = np.random.standard_normal( ( 2, M + 1, N ) )
@@ -181,6 +192,8 @@ S[ 0 ] = S0
 for t in range( 1, M + 1 ):
         ran = np.dot( cho_mat, ran_num[:, t, :])
         S[ t ] = S[ t - 1 ] * np.exp( (r - 0.5 * v[ t ]) *dt + np.sqrt( v[ t ] ) * ran[ 0 ] * np.sqrt( dt ) )
+        
+S_T_stoch = S[ -1 ]      
         
 #....................................................................
 #         Plots
@@ -210,7 +223,89 @@ ax[1,1].set_ylabel( 'Stochastic volatility: $\sigma_t$' )
 
 
 
+mu_3s_st = np.mean(S_T_stoch  ) + 3 * np.std( S_T_stoch )
+mu_5s_st = np.mean(S_T_stoch  ) + 5 * np.std( S_T_stoch )
+# .......... Compare with Brownian motion, with constant volatility ..........................
+fig, ax = plt.subplots( 2, 1, figsize = (10, 6) )   
+ax[ 0 ].hist( S_T_stoch, bins = 100, edgecolor = 'darkgray', color = 'darkred', alpha = 0.6  )
+ax[ 0 ].axvline( S0, color = 'darkblue', linestyle = 'dashed', lw = 1.75, alpha = 0.8 )
+ax[ 0 ].axvline( mu_3s_st, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+ax[ 0 ].annotate( s = '$\mu + 3\sigma = $' + str( round( mu_3s_st ,1) ), xy=(mu_3s_st, 300 ) )
 
+ax[ 0 ].axvline( mu_5s_st, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+ax[ 0 ].annotate( s = '$\mu + 5\sigma = $' + str( round( mu_5s_st ,1) ), xy=(mu_5s_st, 500 ) )
+
+ax[ 0 ].set_xlabel( 'Stock level: $S_T$' )
+ax[ 0 ].set_ylabel( 'Frequency' )
+ax[ 0 ].set_title( 'Distribution of $S_T$ when Stochastic volatility: $\sigma_t$ ' )
+
+left, right = ax[ 0 ].get_xlim()
+
+ax[ 1 ].hist( S_T, bins = 100, edgecolor = 'darkgray', color = 'darkblue', alpha = 0.6  )
+ax[ 1 ].set_xlim( left, right )
+ax[ 1 ].axvline( S0, linestyle = 'dashed', alpha = 0.8, color = 'darkred' )
+ax[ 1 ].axvline( np.mean( S_T ) , linestyle = 'dashed', alpha = 0.8, color = 'red' )
+
+ax[ 1 ].axvline( mu_3s, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+ax[ 1 ].annotate( s = '$\mu + 3\sigma = $' + str( round( mu_3s ,1) ), xy=(mu_3s, 300 ) )
+
+ax[ 1 ].axvline( mu_5s, linestyle = 'dashed', alpha = 0.8, color = 'red' )
+ax[ 1 ].annotate( s = '$\mu + 5\sigma = $' + str( round( mu_5s ,1) ), xy=(mu_5s, 500 ) )
+
+ax[ 1 ].set_xlabel('index level' )
+ax[ 1 ].set_ylabel('frequency' )
+ax[ 1 ].set_title( 'Geometric Brownian Motion: distribution of $S_T$' )
+
+
+"""
+#-----------------------------------------------------------------------------------
+#                               JUMP Diffusion
+#-----------------------------------------------------------------------------------
+     - jumps with log-normal distribution 
+     - dSt = (r-rj) * St * dt + sigma * St * dZt + Jt * St * dNt
+ - Nt == Poisson process
+ 
+"""
+
+#...............................................................
+S0 = 100.0
+r = 0.05
+sigma = 0.2
+lamb = 0.75
+mu = -0.6
+delta = 0.25
+rj = lamb * ( math.exp( mu + 0.5 * delta ** 2 ) - 1 )
+T = 2.0
+M = 100
+N = 10 ** 4
+dt = T / M
+#...............................................................
+
+S = np.zeros( ( M + 1, N ) )
+S[ 0 ] = S0
+sn1 = np.random.standard_normal( ( M + 1, N ) )
+sn2 = np.random.standard_normal( ( M + 1, N ) )
+poi = np.random.poisson( lamb * dt, ( M + 1, N ) )
+
+for t in range( 1, M + 1, 1 ):
+        S[ t ] = S[ t - 1 ] * ( np.exp( (r - rj - 0.5 * sigma ** 2)*dt + sigma * math.sqrt(dt) * sn1[ t ]) + ( np.exp( mu + delta * sn2[ t ]) - 1 ) * poi[ t ] ) 
+        S[ t ] = np.maximum( S[ t ], 0 )
+
+
+S_TJ = S[ -1]
+mn = st.mean( S_TJ )
+#...............................................................
+plt.figure( figsize = ( 10, 6 ) )        
+plt.hist( S_TJ, bins = 50, edgecolor = 'darkgray', color = 'darkred' )
+plt.axvline( mn, linestyle = 'dashed', color = 'darkblue' )
+plt.xlabel( 'value' )
+plt.ylabel( 'frequency' )
+#...............................................................
+
+plt.figure( figsize =( 10, 6) )
+plt.plot(S[:, :10], lw = 1.5 )
+plt.xlabel( 'time' )
+plt.xlabel( 'index level' )
 
 
 
